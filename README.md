@@ -9,26 +9,99 @@ Scraper de subreddits do Reddit **sem API key** — usa o feed JSON público do 
 - Saída em JSON (stdout ou arquivo)
 - Rate-limit respeitado via delay configurável
 
-## Instalação
+## Estrutura
+
+```text
+leddit-scrap/
+├── README.md
+├── requirements.txt
+├── .env.example
+├── .gitignore
+├── src/
+│   └── leddit_scrap/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── config.py
+│       ├── scraper/
+│       │   ├── __init__.py
+│       │   ├── reddit_client.py
+│       │   ├── collectors.py
+│       │   └── parsers.py
+│       ├── storage/
+│       │   ├── __init__.py
+│       │   ├── writer_csv.py
+│       │   ├── writer_json.py
+│       │   └── writer_db.py
+│       └── utils/
+│           ├── __init__.py
+│           ├── logging.py
+│           └── helpers.py
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── exports/
+├── tests/
+│   ├── test_scraper.py
+│   └── test_storage.py
+└── scripts/
+    └── run_scraper.py
+```
+
+## Runbook
+
+### Pré-requisitos
+
+- Python 3.10 ou superior
+- Docker instalado e em execução
+- Git para clonar o repositório
 
 ```bash
+git clone https://github.com/dimi1engineer/leddit-scrap.git
+cd leddit-scrap
+```
+
+### Instalando dependências
+
+```bash
+# Criar e ativar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
+
+# Instalar dependências
 pip install -r requirements.txt
 ```
 
-## Uso
+### Configurando o ambiente
+
+```bash
+# Copiar o arquivo de exemplo
+cp .env.example .env
+```
+
+Edite o `.env` conforme necessário. Variáveis disponíveis:
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `DELAY` | `1.0` | Intervalo em segundos entre requisições |
+| `OUTPUT_DIR` | `data/exports` | Diretório padrão de saída dos arquivos |
+
+### Executando o scraper
+
+O scraper é executado via CLI a partir de `scripts/run_scraper.py`:
 
 ```bash
 # Listar os 10 posts mais quentes de r/dataengineering
-python main.py dataengineering
+PYTHONPATH=src python scripts/run_scraper.py dataengineering
 
 # Top 25 posts + comentários, salvar em arquivo
-python main.py dataengineering --sort top --limit 25 --comments --output resultado.json
+PYTHONPATH=src python scripts/run_scraper.py dataengineering --sort top --limit 25 --comments --output resultado.json
 
 # Novos posts de r/python
-python main.py python --sort new --limit 20
+PYTHONPATH=src python scripts/run_scraper.py python --sort new --limit 20
 ```
 
-## Opções
+#### Opções disponíveis
 
 | Opção | Padrão | Descrição |
 |---|---|---|
@@ -38,10 +111,22 @@ python main.py python --sort new --limit 20
 | `--comments` | desativado | Busca comentários de cada post |
 | `--output` | stdout | Arquivo `.json` de saída |
 
+### Colhendo os resultados
+
+Os arquivos gerados são salvos em:
+
+| Diretório | Conteúdo |
+|---|---|
+| `data/raw/` | Dados brutos coletados diretamente do Reddit |
+| `data/processed/` | Dados após transformações e limpezas |
+| `data/exports/` | Arquivos finais prontos para uso ou análise |
+
+O formato de saída padrão é **JSON**. Para exportar em outros formatos, utilize os writers disponíveis em `src/leddit_scrap/storage/`.
+
 ## Uso como biblioteca
 
 ```python
-from scraper.reddit import RedditScraper
+from leddit_scrap.scraper.reddit_client import RedditScraper
 
 scraper = RedditScraper(delay=1.0)
 
@@ -50,18 +135,6 @@ posts = scraper.get_posts("dataengineering", sort="hot", limit=5)
 
 # Comentários de um post específico
 comments = scraper.get_comments("dataengineering", post_id="abc123")
-```
-
-## Estrutura
-
-```text
-leddit-scrap/
-├── main.py              # CLI
-├── requirements.txt
-├── README.md
-└── scraper/
-    ├── __init__.py
-    └── reddit.py        # RedditScraper
 ```
 
 ## Notas
