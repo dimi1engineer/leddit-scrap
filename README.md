@@ -99,6 +99,30 @@ PYTHONPATH=src python -m leddit_scrap.main dataengineering
 PYTHONPATH=src python scripts/run_scraper.py python --sort new --limit 20 --output data/exports/python.json
 ```
 
+### Executando via Docker Compose
+
+O projeto tambem pode ser executado sem dependencias locais de Python usando Docker Compose.
+
+```bash
+# Construir a imagem
+docker compose build
+
+# Listar os 10 posts mais quentes de r/dataengineering
+docker compose run --rm scraper dataengineering
+
+# Salvar o resultado em JSON no host
+docker compose run --rm scraper python --sort new --limit 20 --output data/exports/python.json
+```
+
+O servico `scraper` usa:
+
+- `python:3.12-slim` como imagem base
+- `PYTHONPATH=/app/src` dentro do container
+- `scripts/run_scraper.py` como entrypoint
+- volume `./data:/app/data` para persistir resultados no host
+
+Se quiser inspecionar os arquivos gerados, eles aparecerao normalmente em `data/exports/`, `data/raw/` ou `data/processed/` no repositorio local.
+
 #### Opcoes disponiveis
 
 | Opcao | Padrao | Descricao |
